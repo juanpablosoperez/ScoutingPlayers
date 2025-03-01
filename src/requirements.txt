@@ -1,0 +1,12 @@
+requests
+beautifulsoup4
+scrapy
+selenium
+pandas
+numpy
+matplotlib
+seaborn
+scikit-learn
+openpyxl
+reportlab
+streamlit
