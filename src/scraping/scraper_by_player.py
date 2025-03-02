@@ -11,43 +11,56 @@ options.add_argument("--disable-gpu")
 options.add_argument("--no-sandbox")
 driver = webdriver.Chrome(options=options)
 
-# URL de la B Nacional en Sofascore
+# URL base de la B Nacional en Sofascore
 url_base = "https://www.sofascore.com/tournament/football/argentina/primera-nacional/703#id:71009,tab:details"
 driver.get(url_base)
-time.sleep(5)  # Esperamos que cargue la página
+time.sleep(5)  # Esperar carga inicial
 
-# 📌 Obtener la lista de jugadores
-jugadores = driver.find_elements(By.XPATH, "//table//tr/td//a")
+# 📌 Scrapeo de todas las páginas de jugadores
+jugadores_dict = {}
+pagina_actual = 1
 
-if not jugadores:
-    print("❌ No se encontraron jugadores en la página.")
-    driver.quit()
-    exit()
+while True:
+    print(f"📄 Scrapeando página {pagina_actual}...")
+
+    jugadores = driver.find_elements(By.XPATH, "//table//tr/td//a")
+
+    for jugador in jugadores:
+        nombre_jugador = jugador.text.strip()
+        if nombre_jugador:
+            jugadores_dict[nombre_jugador.lower()] = jugador
+
+    # Buscar botón para pasar a la siguiente página
+    try:
+        siguiente_pagina = driver.find_element(By.XPATH, "//button[@aria-label='Next page']")
+        driver.execute_script("arguments[0].click();", siguiente_pagina)
+        time.sleep(5)
+        pagina_actual += 1
+    except:
+        print("📌 No hay más páginas.")
+        break  # No hay más páginas, salimos del loop
 
 # 📋 Mostrar la lista de jugadores disponibles
 print("\n📋 Lista de jugadores disponibles:")
-jugadores_dict = {}
-for i, jugador in enumerate(jugadores, start=1):
-    nombre_jugador = jugador.text.strip()
-    jugadores_dict[nombre_jugador.lower()] = jugador
-    print(f"{i}. {nombre_jugador}")
+for i, nombre in enumerate(jugadores_dict.keys(), start=1):
+    print(f"{i}. {nombre.title()}")
 
-# 🎯 Pedir al usuario que elija un jugador
+# 🎯 Pedir al usuario que seleccione un jugador
 jugador_buscado = input("\nIngrese el nombre exacto del jugador a analizar: ").strip().lower()
 
-# Validar si el jugador existe
+# Verificar si el jugador existe en la lista
 if jugador_buscado in jugadores_dict:
     jugador_seleccionado = jugadores_dict[jugador_buscado]
     jugador_nombre = jugador_seleccionado.text
     print(f"📊 Analizando a {jugador_nombre}...")
     jugador_seleccionado.click()
-    time.sleep(5)  # Esperamos a que cargue la página del jugador
+    time.sleep(5)
 else:
     print(f"❌ Jugador '{jugador_buscado}' no encontrado en la lista.")
     driver.quit()
     exit()
 
-# 📌 Extraer información del jugador
+# 📌 Extraer información general del jugador
 datos_jugador = {"Nombre": jugador_nombre}
 
 try:
@@ -59,20 +72,20 @@ try:
 except:
     print("⚠ No se pudo obtener toda la información básica.")
 
-# 🔍 Extraer estadísticas por categoría
-categorias = {
-    "Resumen": "summary",
-    "Ataque": "attack",
-    "Pases": "passing",
-    "Defensa": "defence",
-    "Otros": "other",
-    "Tarjetas": "cards"
-}
+# 🔥 Extraer Sofascore Rating
+try:
+    rating = driver.find_element(By.XPATH, "//span[@role='meter']").text
+    datos_jugador["Rating Sofascore"] = rating
+except:
+    print("⚠ No se pudo obtener el rating del jugador.")
 
-for categoria, tab_id in categorias.items():
+# 🔍 Extraer estadísticas detalladas
+categorias = ["Matches", "Attacking", "Passing", "Defending", "Other (per game)", "Cards"]
+
+for categoria in categorias:
     try:
         boton_categoria = WebDriverWait(driver, 5).until(
-            EC.element_to_be_clickable((By.XPATH, f"//button[@data-tabid='{tab_id}']"))
+            EC.element_to_be_clickable((By.XPATH, f"//button[span[contains(text(),'{categoria}')]]"))
         )
         driver.execute_script("arguments[0].click();", boton_categoria)
         time.sleep(3)
@@ -87,6 +100,24 @@ for categoria, tab_id in categorias.items():
                 continue
     except:
         print(f"⚠ No se pudo obtener datos de {categoria}")
+
+# 🔄 Extraer historial de temporadas y equipos
+try:
+    temporadas = driver.find_elements(By.XPATH, "//span[@color='onSurface.nLv1']")
+    equipos = driver.find_elements(By.XPATH, "//img[contains(@src, 'team')]")
+
+    historial = []
+    for i in range(len(temporadas)):
+        try:
+            temporada = temporadas[i].text
+            equipo = equipos[i].get_attribute("alt")
+            historial.append(f"{temporada}: {equipo}")
+        except:
+            continue
+
+    datos_jugador["Historial de Temporadas"] = " | ".join(historial)
+except:
+    print("⚠ No se pudo obtener el historial de temporadas.")
 
 # 📁 Guardar en CSV
 df = pd.DataFrame([datos_jugador])
