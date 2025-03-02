@@ -6,6 +6,7 @@ from selenium.webdriver.support import expected_conditions as EC
 import pandas as pd
 import time
 import sys
+import os
 
 # Recibir el nombre del jugador como argumento
 if len(sys.argv) < 2:
@@ -126,6 +127,22 @@ try:
     datos_jugador["Valor de Mercado"] = driver.find_element(By.CLASS_NAME, "imGAlA").text
 except:
     datos_jugador["Valor de Mercado"] = "No disponible"
+
+# Extraer el Heatmap
+try:
+    heatmap_section = driver.find_element(By.ID, "player-page-heatmap")
+    
+    # Definir la ruta para guardar la imagen
+    heatmap_path = f"data/player/heatmap_{jugador_buscado.replace(' ', '_')}.png"
+    
+    # Tomar una captura de pantalla del heatmap
+    heatmap_section.screenshot(heatmap_path)
+    
+    print(f"📸 Heatmap guardado en '{heatmap_path}'")
+    datos_jugador["Heatmap"] = heatmap_path  # Guardamos la referencia en el CSV
+except Exception as e:
+    print(f"⚠ No se pudo capturar el heatmap: {e}")
+    datos_jugador["Heatmap"] = "No disponible"
 
 
 # 📊 Scrapeo de Estadísticas por Categoría
