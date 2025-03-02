@@ -123,9 +123,10 @@ except:
     datos_jugador["Pie Preferido"] = "No disponible"
 
 try:
-    datos_jugador["Valor de Mercado"] = driver.find_element(By.XPATH, "//div[contains(text(),'€')]").text
+    datos_jugador["Valor de Mercado"] = driver.find_element(By.CLASS_NAME, "imGAlA").text
 except:
     datos_jugador["Valor de Mercado"] = "No disponible"
+
 
 # 📊 Scrapeo de Estadísticas por Categoría
 categorias = ["Matches", "Attacking", "Passing", "Defending", "Other (per game)", "Cards"]
@@ -159,12 +160,12 @@ for categoria in categorias:
 
 # 📁 Guardar en CSV
 df_basico = pd.DataFrame([datos_jugador])
-df_basico.to_csv(f"data/detalles_{jugador_buscado.replace(' ', '_')}.csv", index=False, encoding='utf-8')
+df_basico.to_csv(f"data/player/detalles_{jugador_buscado.replace(' ', '_')}.csv", index=False, encoding='utf-8')
 
 # Guardar estadísticas en CSV
 for categoria, stats in estadisticas.items():
     df_stats = pd.DataFrame(stats.items(), columns=["Estadística", "Valor"])
-    df_stats.to_csv(f"data/{jugador_buscado.replace(' ', '_')}_{categoria}.csv", index=False, encoding='utf-8')
+    df_stats.to_csv(f"data/player/{jugador_buscado.replace(' ', '_')}_{categoria}.csv", index=False, encoding='utf-8')
 
 print(f"✅ Datos de {jugador_buscado} guardados correctamente.")
 
