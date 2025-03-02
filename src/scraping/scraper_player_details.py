@@ -5,6 +5,15 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import pandas as pd
 import time
+import sys
+
+# Recibir el nombre del jugador como argumento
+if len(sys.argv) < 2:
+    print("❌ Debes proporcionar el nombre del jugador.")
+    sys.exit(1)
+
+jugador_buscado = sys.argv[1]
+print(f"📊 Analizando a {jugador_buscado}...")
 
 # Configurar Selenium con opciones avanzadas
 chrome_options = webdriver.ChromeOptions()
@@ -27,62 +36,8 @@ driver.get(url_base)
 wait = WebDriverWait(driver, 15)
 time.sleep(5)  # Espera inicial
 
-# Lista para almacenar nombres de jugadores
-jugadores_lista = []
-
-# Número total de páginas (41)
-paginas_totales = 41
-
-for pagina in range(1, paginas_totales + 1):
-    print(f"📄 Scrapeando página {pagina} de {paginas_totales}...")
-
-    try:
-        # Esperar a que la tabla cargue
-        tabla = wait.until(EC.presence_of_element_located((By.CLASS_NAME, "kLmlmP")))
-
-        # Extraer filas de la tabla
-        filas = tabla.find_elements(By.TAG_NAME, "tr")
-
-        for fila in filas:
-            columnas = fila.find_elements(By.TAG_NAME, "td")
-            if len(columnas) >= 3:  # Verificar que tenga al menos la columna del jugador
-                nombre = columnas[2].text.strip()
-                if nombre:
-                    jugadores_lista.append(nombre)
-
-        # Intentar hacer clic en el botón de siguiente página
-        try:
-            boton_siguiente = wait.until(EC.element_to_be_clickable((By.XPATH, '//button[@class="Button llwjsV" and @style="justify-content: flex-end;"]')))
-            driver.execute_script("arguments[0].click();", boton_siguiente)
-            time.sleep(4)  # Espera tras cambiar de página
-        except Exception:
-            print("⚠ No se encontró el botón de siguiente página. Fin del scraping.")
-            break
-
-    except Exception as e:
-        print(f"❌ Error en la página {pagina}: {e}")
-        break
-
-# 📋 Mostrar la lista de jugadores disponibles
-print("\n📋 Lista de jugadores disponibles:")
-for i, nombre in enumerate(jugadores_lista, start=1):
-    print(f"{i}. {nombre}")
-
-# 🎯 Pedir al usuario que seleccione un jugador
-while True:
-    try:
-        seleccion = int(input("\nIngrese el número del jugador a analizar: "))
-        if 1 <= seleccion <= len(jugadores_lista):
-            jugador_buscado = jugadores_lista[seleccion - 1]
-            print(f"📊 Buscando a {jugador_buscado} desde la última página...")
-            break
-        else:
-            print("❌ Número fuera de rango. Intente de nuevo.")
-    except ValueError:
-        print("❌ Entrada inválida. Ingrese un número válido.")
-
 # 🔄 Buscar el jugador DESDE LA ÚLTIMA PÁGINA HACIA ATRÁS
-pagina_actual = paginas_totales
+pagina_actual = 41  # Última página
 encontrado = False
 
 while pagina_actual > 0:
@@ -98,11 +53,26 @@ while pagina_actual > 0:
             if len(columnas) >= 3:
                 nombre = columnas[2].text.strip()
                 if nombre == jugador_buscado:
-                    print(f"✅ Jugador {jugador_buscado} encontrado. Abriendo su perfil...")
+                    print(f"✅ Jugador {jugador_buscado} encontrado. Obteniendo su URL...")
 
-                    # Hacer clic en el enlace del jugador
-                    enlace_jugador = fila.find_element(By.TAG_NAME, "a")
-                    driver.execute_script("arguments[0].click();", enlace_jugador)
+                    # Buscar el enlace correcto dentro de la fila
+                    enlaces = fila.find_elements(By.TAG_NAME, "a")
+                    url_jugador = None
+                    for enlace in enlaces:
+                        url_relativa = enlace.get_attribute("href")
+                        if "/player/" in url_relativa:  # Asegurarnos de que es la URL de un jugador
+                            url_jugador = url_relativa  # La URL ya es completa
+                            break
+                    
+                    if not url_jugador:
+                        print("❌ No se pudo obtener la URL del jugador.")
+                        driver.quit()
+                        sys.exit(1)
+
+                    print(f"🔗 URL del perfil: {url_jugador}")
+
+                    # Acceder a la página del jugador
+                    driver.get(url_jugador)
                     time.sleep(5)  # Esperar carga del perfil
                     encontrado = True
                     break
@@ -110,18 +80,23 @@ while pagina_actual > 0:
         if encontrado:
             break  # Salir del bucle si el jugador fue encontrado
 
-        # Ir a la página anterior (REVISADO)
+        # Ir a la página anterior
         try:
             boton_anterior = wait.until(EC.element_to_be_clickable((By.XPATH, '//button[@class="Button llwjsV" and not(@disabled)]')))
             driver.execute_script("arguments[0].click();", boton_anterior)
             time.sleep(4)
         except Exception:
-            print("⚠ No se encontró el botón de página anterior. Intentando nuevamente...")
+            print("⚠ No se encontró el botón de página anterior. Fin del retroceso.")
             break
 
     except Exception as e:
         print(f"❌ Error buscando al jugador: {e}")
         break
+
+if not encontrado:
+    print(f"❌ No se encontró a {jugador_buscado}.")
+    driver.quit()
+    sys.exit(1)
 
 # 📌 Extraer información del jugador
 datos_jugador = {"Nombre": jugador_buscado}
