@@ -28,7 +28,7 @@ chrome_options.add_argument("--disable-software-rasterizer")
 service = Service("src/scraping/chromedriver.exe")
 driver = webdriver.Chrome(service=service, options=chrome_options)
 
-# URL de Sofascore
+# URL de Sofascore (ajusta según tu liga)
 url_base = "https://www.sofascore.com/tournament/football/argentina/primera-nacional/703#id:71009,tab:details"
 driver.get(url_base)
 
@@ -141,14 +141,12 @@ for categoria in categorias:
         time.sleep(3)  # Esperar carga de la sección
 
         # Extraer estadísticas de la tabla
-        seccion = driver.find_element(By.XPATH, f"//span[contains(text(),'{categoria}')]/ancestor::button/following-sibling::div")
-        filas = seccion.find_elements(By.CLASS_NAME, "Box")
-
+        filas = driver.find_elements(By.XPATH, "//div[contains(@class,'Box Flex')]")
         stats = {}
         for fila in filas:
             try:
                 clave = fila.find_element(By.XPATH, ".//span[contains(@class,'Text')]").text.strip()
-                valor = fila.find_elements(By.XPATH, ".//span[contains(@class,'Text')]")[-1].text.strip()
+                valor = fila.find_element(By.XPATH, ".//div[contains(@class,'Text')]").text.strip()
                 stats[clave] = valor
             except:
                 continue  # Si hay un error, pasar a la siguiente fila
