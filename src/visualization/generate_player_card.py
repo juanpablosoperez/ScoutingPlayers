@@ -50,7 +50,6 @@ def load_player_data(player_name):
 # 📌 Extraer la información clave del jugador
 def extract_player_info(xls):
     player_info = {}
-    
     if "Resumen" in xls.sheet_names:
         df_resumen = pd.read_excel(xls, sheet_name="Resumen")
         if not df_resumen.empty:
@@ -88,7 +87,7 @@ def create_player_card(player_name):
     player_stats = extract_player_stats(xls)
 
     # 📌 Configurar imagen
-    img_width, img_height = 800, 1100
+    img_width, img_height = 800, 1200
     img = Image.new("RGB", (img_width, img_height), "white")
     draw = ImageDraw.Draw(img)
 
@@ -111,7 +110,7 @@ def create_player_card(player_name):
     x_text = 160
     y_position = 40
 
-    # 📌 Título
+    # 📌 Título con imagen al lado
     draw.text((x_text, y_position), player_info["Nombre"], fill="black", font=font_title)
     y_position += 50
 
@@ -126,14 +125,16 @@ def create_player_card(player_name):
     # 📌 Estadísticas clave en dos columnas
     column1_x = 20
     column2_x = 400
-    max_stats_per_column = 8
-    col_count = 0
+    y_col1 = y_position
+    y_col2 = y_position
 
-    for category, stats in player_stats.items():
-        if col_count % 2 == 0:
+    for i, (category, stats) in enumerate(player_stats.items()):
+        if i % 2 == 0:
             x_col = column1_x
+            y_position = y_col1
         else:
             x_col = column2_x
+            y_position = y_col2
 
         draw.text((x_col, y_position), f"{category.upper()}:", fill="black", font=font_subtitle)
         y_position += 30
@@ -141,16 +142,16 @@ def create_player_card(player_name):
             draw.text((x_col + 10, y_position), f"- {stat}: {value}", fill="black", font=font_text)
             y_position += 30
 
-        y_position += 20
-        col_count += 1
-        if col_count == max_stats_per_column:
-            y_position = 280
+        if i % 2 == 0:
+            y_col1 = y_position
+        else:
+            y_col2 = y_position
 
-    # 📌 Agregar mapa de calor
+    # 📌 Agregar mapa de calor (lo último en la imagen)
     heatmap_path = os.path.join(HEATMAP_IMAGES_FOLDER, f"heatmap_{player_name.replace(' ', '_')}.png")
     if os.path.exists(heatmap_path):
-        heatmap_img = Image.open(heatmap_path).resize((300, 150))
-        img.paste(heatmap_img, (250, img_height - 200))
+        heatmap_img = Image.open(heatmap_path).resize((400, 200))
+        img.paste(heatmap_img, (200, img_height - 250))  # Lo coloca al centro en la parte inferior
 
     # 📌 Guardar imagen
     os.makedirs(VISUALS_FOLDER, exist_ok=True)
