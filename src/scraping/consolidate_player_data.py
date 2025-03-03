@@ -6,6 +6,7 @@ from openpyxl.drawing.image import Image
 
 # Directorios
 DATA_DIR = "data/player/player_details/"
+VISUALS_DIR = "data/player/visuals/"  # ✅ Carpeta donde están las imágenes
 OUTPUT_DIR = "data/player/consolidated/"
 
 # Asegurar que el directorio de salida existe
@@ -13,7 +14,8 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 def consolidate_player_data(player_name):
     """
-    Consolida todos los datos del jugador en un único archivo Excel en la carpeta de consolidación.
+    Consolida todos los datos del jugador en un único archivo Excel en la carpeta de consolidación,
+    incluyendo la imagen del jugador y el heatmap en hojas separadas.
     """
     player_filename = player_name.replace(" ", "_")
     output_file = os.path.join(OUTPUT_DIR, f"{player_filename}.xlsx")
@@ -38,17 +40,31 @@ def consolidate_player_data(player_name):
             else:
                 print(f"⚠ Archivo no encontrado: {file_path}")
     
-    # Agregar imagen del mapa de calor si existe
-    heatmap_file = os.path.join(DATA_DIR, f"heatmap_{player_filename}.png")
+    # Abrir el archivo para agregar imágenes en hojas separadas
+    wb = load_workbook(output_file)
+
+    # 📌 **Agregar imagen del jugador en una hoja nueva**
+    player_image_file = os.path.join(VISUALS_DIR, f"{player_filename}.png")  # ✅ Carpeta corregida
+    if os.path.exists(player_image_file):
+        ws = wb.create_sheet("Imagen del Jugador")
+        img = Image(player_image_file)
+        ws.add_image(img, "A1")
+        print("✅ Imagen del jugador agregada en hoja separada")
+    else:
+        print("⚠ No se encontró la imagen del jugador")
+
+    # 📌 **Agregar imagen del heatmap en una hoja nueva**
+    heatmap_file = os.path.join(VISUALS_DIR, f"heatmap_{player_filename}.png")  # ✅ Carpeta corregida
     if os.path.exists(heatmap_file):
-        wb = load_workbook(output_file)
         ws = wb.create_sheet("Mapa de Calor")
         img = Image(heatmap_file)
         ws.add_image(img, "A1")
-        wb.save(output_file)
-        print("✅ Mapa de calor agregado")
+        print("✅ Mapa de calor agregado en hoja separada")
     else:
         print("⚠ No se encontró el mapa de calor")
+
+    # Guardar el archivo Excel con las imágenes en hojas separadas
+    wb.save(output_file)
     
     print(f"📂 Archivo generado en: {output_file}")
 
@@ -59,3 +75,6 @@ if __name__ == "__main__":
     
     player_name = sys.argv[1]
     consolidate_player_data(player_name)
+
+
+# python -m src.scraping.consolidate_player_data  "Cristian Bernardi"
