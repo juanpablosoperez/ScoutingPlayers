@@ -7,6 +7,7 @@ import pandas as pd
 import time
 import sys
 import os
+import requests
 
 # Recibir el nombre del jugador como argumento
 if len(sys.argv) < 2:
@@ -144,6 +145,30 @@ except Exception as e:
     print(f"⚠ No se pudo capturar el heatmap: {e}")
     datos_jugador["Heatmap"] = "No disponible"
 
+# 📸 **Descargar la imagen del jugador desde la URL de Sofascore**
+try:
+    # Extraer la URL de la imagen desde el HTML
+    image_element = driver.find_element(By.XPATH, "//img[contains(@class,'Img')]")
+    image_url = image_element.get_attribute("src")
+
+    if image_url:
+        # Definir la ruta para guardar la imagen
+        player_image_path = f"data/player/{jugador_buscado.replace(' ', '_')}.png"
+        
+        # Descargar la imagen
+        img_data = requests.get(image_url).content
+        with open(player_image_path, 'wb') as handler:
+            handler.write(img_data)
+        
+        print(f"🖼 Imagen del jugador guardada en '{player_image_path}'")
+        datos_jugador["Imagen"] = player_image_path  # Guardamos la referencia en el CSV
+    else:
+        print("⚠ No se encontró la URL de la imagen del jugador.")
+        datos_jugador["Imagen"] = "No disponible"
+
+except Exception as e:
+    print(f"⚠ Error al obtener la imagen del jugador: {e}")
+    datos_jugador["Imagen"] = "No disponible"
 
 # 📊 Scrapeo de Estadísticas por Categoría
 categorias = ["Matches", "Attacking", "Passing", "Defending", "Other (per game)", "Cards"]
@@ -177,15 +202,18 @@ for categoria in categorias:
 
 # 📁 Guardar en CSV
 df_basico = pd.DataFrame([datos_jugador])
-df_basico.to_csv(f"data/player/detalles_{jugador_buscado.replace(' ', '_')}.csv", index=False, encoding='utf-8')
+df_basico.to_csv(f"data/player/player_details/detalles_{jugador_buscado.replace(' ', '_')}.csv", index=False, encoding='utf-8')
 
 # Guardar estadísticas en CSV
 for categoria, stats in estadisticas.items():
     df_stats = pd.DataFrame(stats.items(), columns=["Estadística", "Valor"])
-    df_stats.to_csv(f"data/player/{jugador_buscado.replace(' ', '_')}_{categoria}.csv", index=False, encoding='utf-8')
+    df_stats.to_csv(f"data/player/player_details/{jugador_buscado.replace(' ', '_')}_{categoria}.csv", index=False, encoding='utf-8')
 
 print(f"✅ Datos de {jugador_buscado} guardados correctamente.")
 
 # Cerrar navegador
 driver.quit()
 print("🎉 Scraping finalizado.")
+
+
+# python -m src.scraping.scraper_player_details "Cristian Bernardi"

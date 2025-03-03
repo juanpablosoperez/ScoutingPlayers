@@ -79,5 +79,5 @@ driver.quit()
 
 # Guardar los datos en un archivo CSV
 df = pd.DataFrame(jugadores_data, columns=["Rank", "Equipo", "Nombre", "Goles", "Dribbles Exitosos", "Tackles", "Asistencias", "Precisión Pases %", "Rating"])
-df.to_csv("data/jugadores_primera_nacional.csv", index=False, encoding="utf-8")
-print(f"✅ Scraping completado. {len(jugadores_data)} jugadores guardados en 'data/jugadores_primera_nacional.csv'")
+df.to_csv("data/player/players/jugadores_primera_nacional.csv", index=False, encoding="utf-8")
+print(f"✅ Scraping completado. {len(jugadores_data)} jugadores guardados en 'data/player/players/jugadores_primera_nacional.csv'")
