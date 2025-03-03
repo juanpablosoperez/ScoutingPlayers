@@ -1,6 +1,16 @@
 import pandas as pd
 import os
 import sys
+import numpy as np
+
+def clean_numeric(value):
+    """Convierte valores como '3.7 (73%)' en números, eliminando texto innecesario."""
+    if isinstance(value, str):
+        value = value.split()[0]  # Tomar solo el primer valor antes del paréntesis
+    try:
+        return float(value)
+    except ValueError:
+        return np.nan  # Si no se puede convertir, asignar NaN
 
 def analyze_player(player_name):
     # Ruta del archivo consolidado
@@ -12,21 +22,49 @@ def analyze_player(player_name):
         return
     
     print(f"📊 Analizando datos de {player_name}...")
-    
+
     # Cargar el archivo Excel
     xls = pd.ExcelFile(file_path)
     
     # Diccionario para almacenar estadísticas
     stats_summary = {}
-    
+
+    # 📌 Extraer datos de la hoja "Resumen"
+    if "Resumen" in xls.sheet_names:
+        df_resumen = pd.read_excel(xls, sheet_name="Resumen")
+
+        if not df_resumen.empty:
+            print("\n📌 Datos Generales del Jugador:")
+            resumen_dict = df_resumen.iloc[0].to_dict()
+
+            jugador_info = {
+                "Nombre": resumen_dict.get("Nombre", "No disponible"),
+                "Equipo": resumen_dict.get("Equipo", "No disponible"),
+                "Edad": resumen_dict.get("Edad", "No disponible"),
+                "Altura": resumen_dict.get("Altura", "No disponible"),
+                "Pie Preferido": resumen_dict.get("Pie Preferido", "No disponible"),
+                "Valor de Mercado": resumen_dict.get("Valor de Mercado", "No disponible")
+            }
+
+            for key, value in jugador_info.items():
+                print(f"   - {key}: {value}")
+
+    # 📌 Analizar estadísticas de cada hoja
     for sheet in xls.sheet_names:
+        if sheet in ["Resumen", "Mapa de Calor"]:  # Omitir hojas no analizables
+            continue
+
         print(f"\n📌 Analizando sección: {sheet}")
         df = pd.read_excel(xls, sheet_name=sheet)
         
         if df.empty:
             print(f"⚠ La hoja {sheet} está vacía.")
             continue
-        
+
+        # Si las columnas son "Estadística" y "Valor", convertir "Valor" a numérico
+        if "Valor" in df.columns:
+            df["Valor"] = df["Valor"].apply(clean_numeric)
+
         # Obtener estadísticas clave
         stats_summary[sheet] = {
             "Total Registros": len(df),
@@ -34,9 +72,11 @@ def analyze_player(player_name):
             "Máximos": df.max(numeric_only=True).to_dict(),
             "Mínimos": df.min(numeric_only=True).to_dict()
         }
-        
-        print(df.describe())  # Mostrar estadísticas en consola
-    
+
+        # Mostrar resumen estadístico en consola
+        print(df.describe())
+
+    # 📋 **Resumen final**
     print("\n✅ Análisis completado. Datos clave:")
     for section, stats in stats_summary.items():
         print(f"\n🔹 {section}:")
