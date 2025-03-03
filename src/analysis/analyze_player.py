@@ -21,7 +21,7 @@ def analyze_player(player_name):
         print(f"❌ Error: No se encontró el archivo {file_path}")
         return
     
-    print(f"📊 Analizando datos de {player_name}...")
+    print(f"\n📊 Analizando datos de {player_name}...\n")
 
     # Cargar el archivo Excel
     xls = pd.ExcelFile(file_path)
@@ -29,12 +29,12 @@ def analyze_player(player_name):
     # Diccionario para almacenar estadísticas
     stats_summary = {}
 
-    # 📌 Extraer datos de la hoja "Resumen"
+    # 📌 **Extraer datos de la hoja "Resumen"**
     if "Resumen" in xls.sheet_names:
         df_resumen = pd.read_excel(xls, sheet_name="Resumen")
 
         if not df_resumen.empty:
-            print("\n📌 Datos Generales del Jugador:")
+            print("📌 **Datos Generales del Jugador:**")
             resumen_dict = df_resumen.iloc[0].to_dict()
 
             jugador_info = {
@@ -49,20 +49,25 @@ def analyze_player(player_name):
             for key, value in jugador_info.items():
                 print(f"   - {key}: {value}")
 
-    # 📌 Analizar estadísticas de cada hoja
+    # 📌 **Analizar estadísticas de cada hoja**
     for sheet in xls.sheet_names:
         if sheet in ["Resumen", "Mapa de Calor"]:  # Omitir hojas no analizables
             continue
 
-        print(f"\n📌 Analizando sección: {sheet}")
+        print(f"\n📌 **Analizando sección: {sheet}**")
         df = pd.read_excel(xls, sheet_name=sheet)
         
         if df.empty:
             print(f"⚠ La hoja {sheet} está vacía.")
             continue
 
-        # Si las columnas son "Estadística" y "Valor", convertir "Valor" a numérico
-        if "Valor" in df.columns:
+        # Si las columnas son "Estadística" y "Valor", mostrar correctamente
+        if "Estadística" in df.columns and "Valor" in df.columns:
+            print("\n📊 **Datos Detallados:**")
+            for _, row in df.iterrows():
+                print(f"   - {row['Estadística']}: {row['Valor']}")
+
+            # Convertir valores a numéricos para estadísticas
             df["Valor"] = df["Valor"].apply(clean_numeric)
 
         # Obtener estadísticas clave
@@ -73,17 +78,20 @@ def analyze_player(player_name):
             "Mínimos": df.min(numeric_only=True).to_dict()
         }
 
-        # Mostrar resumen estadístico en consola
-        print(df.describe())
-
     # 📋 **Resumen final**
-    print("\n✅ Análisis completado. Datos clave:")
+    print("\n✅ **Análisis completado. Datos clave:**")
     for section, stats in stats_summary.items():
-        print(f"\n🔹 {section}:")
+        print(f"\n🔹 **{section}:**")
         print(f"   - Registros: {stats['Total Registros']}")
-        print(f"   - Promedios: {stats['Promedios']}")
-        print(f"   - Máximos: {stats['Máximos']}")
-        print(f"   - Mínimos: {stats['Mínimos']}")
+        print(f"   - Promedios:")
+        for key, value in stats["Promedios"].items():
+            print(f"     - {key}: {value}")
+        print(f"   - Máximos:")
+        for key, value in stats["Máximos"].items():
+            print(f"     - {key}: {value}")
+        print(f"   - Mínimos:")
+        for key, value in stats["Mínimos"].items():
+            print(f"     - {key}: {value}")
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
