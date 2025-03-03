@@ -87,44 +87,44 @@ def create_player_card(player_name):
     player_stats = extract_player_stats(xls)
 
     # 📌 Configurar imagen
-    img_width, img_height = 800, 1200
+    img_width, img_height = 850, 1300
     img = Image.new("RGB", (img_width, img_height), "white")
     draw = ImageDraw.Draw(img)
 
     # 📌 Cargar fuente
     try:
-        font_title = ImageFont.truetype(os.path.join(FONTS_FOLDER, "arial_bold.ttf"), 40)
-        font_subtitle = ImageFont.truetype(os.path.join(FONTS_FOLDER, "arial.ttf"), 30)
-        font_text = ImageFont.truetype(os.path.join(FONTS_FOLDER, "arial.ttf"), 25)
+        font_title = ImageFont.truetype(os.path.join(FONTS_FOLDER, "arial_bold.ttf"), 50)
+        font_subtitle = ImageFont.truetype(os.path.join(FONTS_FOLDER, "arial.ttf"), 35)
+        font_text = ImageFont.truetype(os.path.join(FONTS_FOLDER, "arial.ttf"), 30)
     except:
         print("⚠ No se encontró la fuente, usando predeterminada.")
         font_title = font_subtitle = font_text = ImageFont.load_default()
 
-    # 📌 Cargar imagen del jugador si existe
+    # 📌 Cargar imagen del jugador
     player_image_path = os.path.join(PLAYER_IMAGES_FOLDER, f"{player_name.replace(' ', '_')}.png")
     if os.path.exists(player_image_path):
-        player_img = Image.open(player_image_path).resize((120, 120))
+        player_img = Image.open(player_image_path).resize((140, 140))
         img.paste(player_img, (20, 20))
 
     # 📌 Posiciones iniciales
-    x_text = 160
-    y_position = 40
+    x_text = 180
+    y_position = 30
 
     # 📌 Título con imagen al lado
     draw.text((x_text, y_position), player_info["Nombre"], fill="black", font=font_title)
-    y_position += 50
+    y_position += 60
 
     # 📌 Datos generales
     for key, value in player_info.items():
         if key != "Nombre":
             draw.text((x_text, y_position), f"{key}: {value}", fill="black", font=font_subtitle)
-            y_position += 40
+            y_position += 50
 
-    y_position += 30
+    y_position += 40
 
     # 📌 Estadísticas clave en dos columnas
-    column1_x = 20
-    column2_x = 400
+    column1_x = 40
+    column2_x = 450
     y_col1 = y_position
     y_col2 = y_position
 
@@ -137,21 +137,21 @@ def create_player_card(player_name):
             y_position = y_col2
 
         draw.text((x_col, y_position), f"{category.upper()}:", fill="black", font=font_subtitle)
-        y_position += 30
+        y_position += 35
         for stat, value in stats.items():
             draw.text((x_col + 10, y_position), f"- {stat}: {value}", fill="black", font=font_text)
-            y_position += 30
+            y_position += 35
 
         if i % 2 == 0:
             y_col1 = y_position
         else:
             y_col2 = y_position
 
-    # 📌 Agregar mapa de calor (lo último en la imagen)
+    # 📌 Agregar mapa de calor al final
     heatmap_path = os.path.join(HEATMAP_IMAGES_FOLDER, f"heatmap_{player_name.replace(' ', '_')}.png")
     if os.path.exists(heatmap_path):
-        heatmap_img = Image.open(heatmap_path).resize((400, 200))
-        img.paste(heatmap_img, (200, img_height - 250))  # Lo coloca al centro en la parte inferior
+        heatmap_img = Image.open(heatmap_path).resize((500, 250))
+        img.paste(heatmap_img, (175, img_height - 300))
 
     # 📌 Guardar imagen
     os.makedirs(VISUALS_FOLDER, exist_ok=True)
