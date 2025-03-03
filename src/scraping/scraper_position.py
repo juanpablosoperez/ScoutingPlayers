@@ -75,7 +75,7 @@ for tab_id, tab_name in tabs.items():
 
         # Guardar datos en CSV
         df = pd.DataFrame(all_players)
-        df.to_csv(f"data/jugadores_{tab_id}.csv", index=False, encoding='utf-8')
+        df.to_csv(f"data/player/players/jugadores_{tab_id}.csv", index=False, encoding='utf-8')
         print(f"✅ Datos de {tab_name} guardados en 'data/jugadores_{tab_id}.csv'")
 
     except Exception as e:
