@@ -78,20 +78,7 @@ def analyze_player(player_name):
             "Mínimos": df.min(numeric_only=True).to_dict()
         }
 
-    # 📋 **Resumen final**
-    print("\n✅ **Análisis completado. Datos clave:**")
-    for section, stats in stats_summary.items():
-        print(f"\n🔹 **{section}:**")
-        print(f"   - Registros: {stats['Total Registros']}")
-        print(f"   - Promedios:")
-        for key, value in stats["Promedios"].items():
-            print(f"     - {key}: {value}")
-        print(f"   - Máximos:")
-        for key, value in stats["Máximos"].items():
-            print(f"     - {key}: {value}")
-        print(f"   - Mínimos:")
-        for key, value in stats["Mínimos"].items():
-            print(f"     - {key}: {value}")
+    
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
