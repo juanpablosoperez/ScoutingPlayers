@@ -7,7 +7,8 @@ from PIL import Image, ImageDraw, ImageFont
 DATA_FOLDER = "data/player/consolidated/"
 VISUALS_FOLDER = "data/player/visuals/"
 FONTS_FOLDER = "src/fonts/"
-PLAYER_IMAGES_FOLDER = "data/player/images/"
+PLAYER_IMAGES_FOLDER = "data/player/visuals/"
+HEATMAP_IMAGES_FOLDER = "data/player/visuals/"
 
 # 📌 Traducción de las categorías
 STAT_TRANSLATIONS = {
@@ -87,10 +88,10 @@ def create_player_card(player_name):
     player_stats = extract_player_stats(xls)
 
     # 📌 Configurar imagen
-    img_width, img_height = 600, 900
+    img_width, img_height = 800, 1100
     img = Image.new("RGB", (img_width, img_height), "white")
     draw = ImageDraw.Draw(img)
-    
+
     # 📌 Cargar fuente
     try:
         font_title = ImageFont.truetype(os.path.join(FONTS_FOLDER, "arial_bold.ttf"), 40)
@@ -107,32 +108,49 @@ def create_player_card(player_name):
         img.paste(player_img, (20, 20))
 
     # 📌 Posiciones iniciales
-    y_position = 160 if os.path.exists(player_image_path) else 20
+    x_text = 160
+    y_position = 40
 
     # 📌 Título
-    draw.text((20, y_position), player_info["Nombre"], fill="black", font=font_title)
+    draw.text((x_text, y_position), player_info["Nombre"], fill="black", font=font_title)
     y_position += 50
 
     # 📌 Datos generales
-    draw.text((20, y_position), f"Equipo: {player_info['Equipo']}", fill="black", font=font_subtitle)
-    y_position += 40
-    draw.text((20, y_position), f"Edad: {player_info['Edad']}", fill="black", font=font_subtitle)
-    y_position += 40
-    draw.text((20, y_position), f"Altura: {player_info['Altura']}", fill="black", font=font_subtitle)
-    y_position += 40
-    draw.text((20, y_position), f"Pie Preferido: {player_info['Pie Preferido']}", fill="black", font=font_subtitle)
-    y_position += 40
-    draw.text((20, y_position), f"Valor de Mercado: {player_info['Valor de Mercado']}", fill="black", font=font_subtitle)
-    y_position += 60
+    for key, value in player_info.items():
+        if key != "Nombre":
+            draw.text((x_text, y_position), f"{key}: {value}", fill="black", font=font_subtitle)
+            y_position += 40
 
-    # 📌 Estadísticas clave
+    y_position += 30
+
+    # 📌 Estadísticas clave en dos columnas
+    column1_x = 20
+    column2_x = 400
+    max_stats_per_column = 8
+    col_count = 0
+
     for category, stats in player_stats.items():
-        draw.text((20, y_position), f"{category.upper()}:", fill="black", font=font_subtitle)
+        if col_count % 2 == 0:
+            x_col = column1_x
+        else:
+            x_col = column2_x
+
+        draw.text((x_col, y_position), f"{category.upper()}:", fill="black", font=font_subtitle)
         y_position += 30
         for stat, value in stats.items():
-            draw.text((30, y_position), f"- {stat}: {value}", fill="black", font=font_text)
+            draw.text((x_col + 10, y_position), f"- {stat}: {value}", fill="black", font=font_text)
             y_position += 30
+
         y_position += 20
+        col_count += 1
+        if col_count == max_stats_per_column:
+            y_position = 280
+
+    # 📌 Agregar mapa de calor
+    heatmap_path = os.path.join(HEATMAP_IMAGES_FOLDER, f"heatmap_{player_name.replace(' ', '_')}.png")
+    if os.path.exists(heatmap_path):
+        heatmap_img = Image.open(heatmap_path).resize((300, 150))
+        img.paste(heatmap_img, (250, img_height - 200))
 
     # 📌 Guardar imagen
     os.makedirs(VISUALS_FOLDER, exist_ok=True)
@@ -149,3 +167,6 @@ if __name__ == "__main__":
     else:
         player_name = sys.argv[1]
         create_player_card(player_name)
+
+
+# python -m src.visualization.generate_player_card 'Cristian Bernardi'
